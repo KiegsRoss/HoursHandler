@@ -19,15 +19,22 @@ import java.util.List;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import java.util.concurrent.TimeUnit;
+import java.util.ArrayList;
 
 public class HoursTotaller extends Application{
 	
 	private TextField name = new TextField();
 	private TextField numFiles = new TextField();
+	private TextField currYear = new TextField();
+	private TextField currMonth = new TextField();
 	private Button submitBtn = new Button("Submit");
 	private int totalFiles = 0;
 	private String employeeName = "";
 	private TextField[] files;
+	private int thisYear;
+	private String thisMonth = "";
+	private int nowMonth = 0;
+	private List<WorkDay> sessions = new ArrayList<WorkDay>();
 	
 	@Override
 	public void start(Stage primaryStage) {
@@ -46,12 +53,18 @@ public class HoursTotaller extends Application{
 		firstPane.add(new Label("Number of Files: "), 0, 1);
 		firstPane.add(numFiles , 1, 1);
 		numFiles.setText("");
+		firstPane.add(new Label("Current Month: "), 0, 2);
+		firstPane.add(currMonth, 1, 2);
+		currMonth.setText("");
+		firstPane.add(new Label("Current Year: "), 0, 3);
+		firstPane.add(currYear, 1, 3);
+		currYear.setText("");
 		
 		//add button and set up handler
-		firstPane.add(submitBtn, 1, 2);
+		firstPane.add(submitBtn, 1, 4);
 		GridPane.setHalignment(submitBtn, HPos.LEFT);
 		submitBtn.setOnAction(e -> getFiles(primaryStage));
-		numFiles.setOnAction(e -> getFiles(primaryStage));
+		currYear.setOnAction(e -> getFiles(primaryStage));
 		
 		//add fyi image to background
 		
@@ -69,7 +82,7 @@ public class HoursTotaller extends Application{
 		
 		//setting and showing the firstPane
 		Scene scene = new Scene(firstPane);
-		primaryStage.setTitle("Hours Totaller");
+		primaryStage.setTitle("Hours Extractor");
 		primaryStage.setScene(scene);
 		primaryStage.show();
 		
@@ -83,6 +96,43 @@ public class HoursTotaller extends Application{
 		employeeName = name.getText();
 		totalFiles = Integer.parseInt(numFiles.getText());
 		files = new TextField[totalFiles];
+		thisYear = Integer.parseInt(currYear.getText());
+		thisMonth = currMonth.getText();
+		try {
+			nowMonth = getMonthNum(thisMonth);
+			if(nowMonth == 0) {
+				throw new NumberFormatException();
+			}
+		}catch(NumberFormatException e) {
+			
+			//set up pane for the error message
+			GridPane exceptionPane = new GridPane();
+			exceptionPane.setAlignment(Pos.CENTER);
+			exceptionPane.setPadding(new Insets(20));
+			exceptionPane.setHgap(6);
+			exceptionPane.setVgap(10);
+			
+			Label error = new Label(thisMonth + " is not an actual month.");
+			exceptionPane.add(error, 0, 0);
+			GridPane.setHalignment(error, HPos.CENTER);
+			
+			Scene scene = new Scene(exceptionPane);
+			primaryStage.setTitle("Hours Extractor");
+			primaryStage.setScene(scene);
+			primaryStage.show();
+			
+			//set delay so user can read error message
+			try {
+				TimeUnit.SECONDS.sleep(5);
+			}catch(InterruptedException ie) {
+				
+			}
+			
+			//return to getting the files from the user
+			start(primaryStage);
+			return;
+			
+		}
 		System.out.println(employeeName + " and " + totalFiles);
 		
 		//create and pad the second pane
@@ -100,7 +150,7 @@ public class HoursTotaller extends Application{
 		}
 		
 		//add button and set up handler
-		Button addBtn = new Button("Total Hours");
+		Button addBtn = new Button("Extract Hours");
 		secondPane.add(addBtn, 1, totalFiles);
 		GridPane.setHalignment(addBtn, HPos.LEFT);
 		addBtn.setOnAction(e -> addHours(primaryStage));
@@ -117,7 +167,7 @@ public class HoursTotaller extends Application{
 		
 		//set and display the second pane on stage
 		Scene secondScene = new Scene(secondPane);
-		primaryStage.setTitle("Hours Totaller");
+		primaryStage.setTitle("Hours Extractor");
 		primaryStage.setScene(secondScene);
 		primaryStage.show();
 	}
@@ -138,6 +188,7 @@ public class HoursTotaller extends Application{
 		float travelHours = 0;
 		float consultHours = 0;
 		int hoursCounter = 0;
+		String menteeName = "";
 		byte curr;
 		
 		for(int i = 0; i < fileList.length; i++) {
@@ -155,8 +206,32 @@ public class HoursTotaller extends Application{
 					//get the text for each paragraph
 					String text = para.getText();
 					
-					
-					if(text.contains("Consult")) { //checks for consult time to be added
+					if(text.contains("Referral")) {
+						
+						byte[] textBytes = text.getBytes();
+						
+						for(int j = 0; j < textBytes.length; j++) {
+							
+							curr = textBytes[j];
+							int offset = 2;
+							
+							if(((char)curr == 'e' || (char)curr == 'l') && (char)textBytes[j + 1] == ':') {
+								
+								while((char)textBytes[j + offset] == ' ') {
+									offset++;
+								}
+								
+								do {
+									
+									menteeName = menteeName + (char)textBytes[j+offset];
+									offset++;
+									
+								}while((char)textBytes[j + offset] != '/');
+								break;
+							}
+						}
+					}
+					else if(text.contains("Consult")) { //checks for consult time to be added
 						
 						//get the bytes to parse through
 						byte[] textBytes = text.getBytes();
@@ -264,7 +339,7 @@ public class HoursTotaller extends Application{
 				GridPane.setHalignment(error, HPos.CENTER);
 				
 				Scene scene = new Scene(thirdPane);
-				primaryStage.setTitle("Hours Totaller");
+				primaryStage.setTitle("Hours Extractor");
 				primaryStage.setScene(scene);
 				primaryStage.show();
 				
@@ -334,13 +409,44 @@ public class HoursTotaller extends Application{
 		
 		
 		Scene scene = new Scene(thirdPane);
-		primaryStage.setTitle("Hours Totaller");
+		primaryStage.setTitle("Hours Extractor");
 		primaryStage.setScene(scene);
 		primaryStage.show();
 		
 		
 		
 		
+	}
+	
+	public int getMonthNum(String month) {
+		
+		if(month.equals("January") || month.equals("january")) {
+			return 1;
+		}else if(month.equals("February") || month.equals("february")) {
+			return 2;
+		}else if(month.equals("March") || month.equals("march")) {
+			return 3;
+		}else if(month.equals("April") || month.equals("april")) {
+			return 4;
+		}else if(month.equals("May") || month.equals("may")) {
+			return 5;
+		}else if(month.equals("June")  || month.equals("june")) {
+			return 6;
+		}else if(month.equals("July") || month.equals("july")) {
+			return 7;
+		}else if(month.equals("August") || month.equals("august")) {
+			return 8;
+		}else if(month.equals("September") || month.equals("september")) {
+			return 9;
+		}else if(month.equals("October") || month.equals("october")) {
+			return 10;
+		}else if(month.equals("November") || month.equals("november")) {
+			return 11;
+		}else if(month.equals("December") || month.equals("december")) {
+			return 12;
+		}else {
+			return 0;
+		}
 	}
 	
 	public static void main(String[] args) {
