@@ -20,6 +20,9 @@ import org.apache.poi.xwpf.usermodel.XWPFParagraph;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import java.util.concurrent.TimeUnit;
 import java.util.ArrayList;
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 public class HoursTotaller extends Application{
 	
@@ -88,6 +91,9 @@ public class HoursTotaller extends Application{
 		
 	}
 	
+	
+	
+	
 	private void getFiles(Stage primaryStage){
 		
 		
@@ -98,6 +104,7 @@ public class HoursTotaller extends Application{
 		files = new TextField[totalFiles];
 		thisYear = Integer.parseInt(currYear.getText());
 		thisMonth = currMonth.getText();
+		
 		try {
 			nowMonth = getMonthNum(thisMonth);
 			if(nowMonth == 0) {
@@ -133,7 +140,6 @@ public class HoursTotaller extends Application{
 			return;
 			
 		}
-		System.out.println(employeeName + " and " + totalFiles);
 		
 		//create and pad the second pane
 		GridPane secondPane = new GridPane();
@@ -172,6 +178,8 @@ public class HoursTotaller extends Application{
 		primaryStage.show();
 	}
 	
+	
+	
 	public void addHours(Stage primaryStage) {
 		
 		//get the list of files to parse through from previous text fields
@@ -189,6 +197,7 @@ public class HoursTotaller extends Application{
 		float consultHours = 0;
 		int hoursCounter = 0;
 		String menteeName = "";
+		int sessionDay = 0;
 		byte curr;
 		
 		for(int i = 0; i < fileList.length; i++) {
@@ -214,6 +223,7 @@ public class HoursTotaller extends Application{
 							
 							curr = textBytes[j];
 							int offset = 2;
+							int whitespaceCounter = 0;
 							
 							if(((char)curr == 'e' || (char)curr == 'l') && (char)textBytes[j + 1] == ':') {
 								
@@ -224,11 +234,39 @@ public class HoursTotaller extends Application{
 								do {
 									
 									menteeName = menteeName + (char)textBytes[j+offset];
+									if((char)textBytes[j+offset] == ' ') whitespaceCounter++;
 									offset++;
 									
-								}while((char)textBytes[j + offset] != '/');
+								}while( whitespaceCounter <= 1);
 								break;
 							}
+						}
+					}else if(text.contains(thisMonth) && text.contains(",")) {
+						
+						byte[] monthBytes = thisMonth.getBytes();
+						byte[] textBytes = text.getBytes();
+						
+						for(int j = 0; j < textBytes.length; j++) {
+							
+							curr = textBytes[j];
+							int offset = 2;
+							
+							if(((char)curr == (char)monthBytes[thisMonth.length() - 1]) && (49 <= textBytes[j + 2] && textBytes[j + 2] <= 57) ) {
+								
+								while((char)textBytes[j+offset] == ' ') {
+									offset++;
+								}
+								
+								String dayString = "";
+								do {
+									dayString = dayString + (char)textBytes[j + offset];
+									offset++;
+								}while(textBytes[j+offset] != ',');
+								
+								sessionDay = Integer.parseInt(dayString);
+								
+							}
+							
 						}
 					}
 					else if(text.contains("Consult")) { //checks for consult time to be added
@@ -293,20 +331,26 @@ public class HoursTotaller extends Application{
 								try {
 								
 									if(hoursCounter == 0) {
-										travelHours += Float.parseFloat(addUp);
+										travelHours = Float.parseFloat(addUp);
 										hoursCounter++;
 									
 									}else if(hoursCounter == 1) {
-										houseHours += Float.parseFloat(addUp);
+										houseHours = Float.parseFloat(addUp);
 										hoursCounter++;
 									
 									}else if(hoursCounter == 2) {
-										commHours += Float.parseFloat(addUp);
+										commHours = Float.parseFloat(addUp);
 										hoursCounter++;
 									
 									}else if(hoursCounter == 3) {
-										docHours += Float.parseFloat(addUp);
+										docHours = Float.parseFloat(addUp);
 										hoursCounter = 0;
+										
+										WorkDay workDay = new WorkDay(travelHours
+												, houseHours, commHours, docHours, nowMonth, sessionDay, 
+												thisYear, menteeName, employeeName);
+										sessions.add(workDay);
+										
 									}
 								}catch(NumberFormatException e) {
 									
@@ -360,6 +404,7 @@ public class HoursTotaller extends Application{
 				System.exit(0);
 				
 			}
+			menteeName = "";
 		}
 		
 		//set up pane for final window
@@ -382,19 +427,16 @@ public class HoursTotaller extends Application{
 		consult.setText(Float.toString(consultHours));
 		
 		//set the labels and textfields for the calculated hours on the scene
-		thirdPane.add(new Label("Travel Hours: "), 0, 0);
-		thirdPane.add(travel, 1, 0);
-		thirdPane.add(new Label("House Hours: "), 0, 1);
-		thirdPane.add(house, 1, 1);
-		thirdPane.add(new Label("Community Hours: "), 0, 2);
-		thirdPane.add(community, 1, 2);
-		thirdPane.add(new Label("Documentation Hours: "), 0, 3);
-		thirdPane.add(doc, 1, 3);
-		thirdPane.add(new Label("Consultation Hours: "), 0, 4);
-		thirdPane.add(consult, 1, 4);
+		thirdPane.add(new Label("Ta Daaaaaaa"), 0, 0);
+		
+		for(WorkDay wd : sessions) {
+			
+			System.out.println(wd.getDate() + " "+wd.getMentee()+" : Travel = "+wd.getTravel()+" House = "+wd.getHouse());
+			
+		}
 		
 		//Create button and set up to restart on click
-		Button runAgain = new Button("Run Again");
+		Button runAgain = new Button("Add More Files");
 		thirdPane.add(runAgain, 1, 5);
 		GridPane.setHalignment(runAgain, HPos.RIGHT);
 		runAgain.setOnAction(e -> start(primaryStage));
@@ -417,6 +459,9 @@ public class HoursTotaller extends Application{
 		
 		
 	}
+	
+	
+	
 	
 	public int getMonthNum(String month) {
 		
@@ -448,6 +493,9 @@ public class HoursTotaller extends Application{
 			return 0;
 		}
 	}
+	
+	
+	
 	
 	public static void main(String[] args) {
 		
