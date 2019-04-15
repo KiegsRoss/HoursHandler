@@ -19,10 +19,15 @@ import java.util.List;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import java.util.concurrent.TimeUnit;
+
+import javax.security.auth.RefreshFailedException;
+
 import java.util.ArrayList;
-import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
-import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import javafx.scene.paint.Paint;
 
 public class HoursTotaller extends Application{
 	
@@ -38,6 +43,7 @@ public class HoursTotaller extends Application{
 	private String thisMonth = "";
 	private int nowMonth = 0;
 	private List<WorkDay> sessions = new ArrayList<WorkDay>();
+	private TextField excelFileField = new TextField();
 	
 	@Override
 	public void start(Stage primaryStage) {
@@ -414,20 +420,11 @@ public class HoursTotaller extends Application{
 		thirdPane.setHgap(6);
 		thirdPane.setVgap(10);
 		
-		//populate the text fields with the caclulated hours
-		TextField travel = new TextField();
-		travel.setText(Float.toString(travelHours));
-		TextField house = new TextField();
-		house.setText(Float.toString(houseHours));
-		TextField community = new TextField();
-		community.setText(Float.toString(commHours));
-		TextField doc = new TextField();
-		doc.setText(Float.toString(docHours));
-		TextField consult = new TextField();
-		consult.setText(Float.toString(consultHours));
-		
 		//set the labels and textfields for the calculated hours on the scene
-		thirdPane.add(new Label("Ta Daaaaaaa"), 0, 0);
+		Label confirm = new Label(employeeName+"'s session hours have been extracted.");
+		confirm.setMaxWidth(170);
+		confirm.setWrapText(true);
+		thirdPane.add(confirm, 0, 0);
 		
 		for(WorkDay wd : sessions) {
 			
@@ -437,9 +434,15 @@ public class HoursTotaller extends Application{
 		
 		//Create button and set up to restart on click
 		Button runAgain = new Button("Add More Files");
-		thirdPane.add(runAgain, 1, 5);
-		GridPane.setHalignment(runAgain, HPos.RIGHT);
+		thirdPane.add(runAgain, 0, 1);
+		GridPane.setHalignment(runAgain, HPos.CENTER);
 		runAgain.setOnAction(e -> start(primaryStage));
+		
+		//Create button to make the xlsx file
+		Button createFile = new Button("Create Excel File");
+		thirdPane.add(createFile, 1, 1);
+		GridPane.setHalignment(createFile, HPos.CENTER);
+		createFile.setOnAction(e -> getFileName(primaryStage));
 		
 		//add fyi image to background
 		InputStream image = ClassLoader.getSystemResourceAsStream("fyi.png");
@@ -447,7 +450,9 @@ public class HoursTotaller extends Application{
 		BackgroundImage myBI= new BackgroundImage(fyi,
 		        BackgroundRepeat.NO_REPEAT, BackgroundRepeat.NO_REPEAT, BackgroundPosition.CENTER,
 		          BackgroundSize.DEFAULT);
-		thirdPane.setBackground(new Background(myBI));
+		Background back = new Background(myBI);
+		thirdPane.setBackground(back);
+	
 		
 		
 		Scene scene = new Scene(thirdPane);
@@ -460,7 +465,82 @@ public class HoursTotaller extends Application{
 		
 	}
 	
+	public void getFileName(Stage primaryStage) {
+		
+		GridPane namePane = new GridPane();
+		namePane.setAlignment(Pos.CENTER);
+		namePane.setPadding(new Insets(20));
+		namePane.setHgap(6);
+		namePane.setVgap(10);
+		
+		namePane.add(new Label("Enter the excel filename: "), 0, 0);
+		namePane.add(excelFileField, 1, 0);
+		
+		Button writeFile = new Button("Write to File");
+		namePane.add(writeFile, 1, 1);
+		GridPane.setHalignment(writeFile, HPos.LEFT);
+		writeFile.setOnAction(e -> createFile(primaryStage));
+		
+		//add fyi image to background
+				InputStream image = ClassLoader.getSystemResourceAsStream("fyi.png");
+				Image fyi = new Image(image);
+				BackgroundImage myBI= new BackgroundImage(fyi,
+				        BackgroundRepeat.NO_REPEAT, BackgroundRepeat.NO_REPEAT, BackgroundPosition.CENTER,
+				          BackgroundSize.DEFAULT);
+				namePane.setBackground(new Background(myBI));
+		
+		Scene scene = new Scene(namePane);
+		primaryStage.setTitle("Hours Extractor");
+		primaryStage.setScene(scene);
+		primaryStage.show();
+		
+	}
 	
+	public void createFile(Stage primaryStage) {
+		
+		String fileName = excelFileField.getText();
+		
+		XSSFWorkbook workbook = new XSSFWorkbook();
+		XSSFSheet sheet = workbook.createSheet();
+		
+		int rowNum = 0;
+		
+		for(WorkDay session: sessions) {
+			
+			Row row = sheet.createRow(rowNum++);
+			
+			int colNum = 0;
+			
+			Cell dateCell = row.createCell(colNum++);
+			dateCell.setCellValue(session.getDate());
+			Cell menteeCell = row.createCell(colNum++);
+			menteeCell.setCellValue(session.getMentee());
+			Cell mentorCell = row.createCell(colNum++);
+			mentorCell.setCellValue(session.getMentor());
+			Cell travelCell = row.createCell(colNum++);
+			travelCell.setCellValue(session.getTravel());
+			Cell houseCell = row.createCell(colNum++);
+			houseCell.setCellValue(session.getHouse());
+			Cell commCell = row.createCell(colNum++);
+			commCell.setCellValue(session.getComm());
+			Cell docCell = row.createCell(colNum++);
+			docCell.setCellValue(session.getDoc());
+			
+		}
+		
+		try {
+            FileOutputStream outputStream = new FileOutputStream(fileName);
+            workbook.write(outputStream);
+            workbook.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+		
+		System.exit(0);
+		
+	}
 	
 	
 	public int getMonthNum(String month) {
