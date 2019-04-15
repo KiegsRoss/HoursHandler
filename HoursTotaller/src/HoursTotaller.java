@@ -19,15 +19,12 @@ import java.util.List;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import java.util.concurrent.TimeUnit;
-
 import javax.security.auth.RefreshFailedException;
-
 import java.util.ArrayList;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import javafx.scene.paint.Paint;
 
 public class HoursTotaller extends Application{
 	
@@ -42,8 +39,11 @@ public class HoursTotaller extends Application{
 	private int thisYear;
 	private String thisMonth = "";
 	private int nowMonth = 0;
+	private int id = 1;
 	private List<WorkDay> sessions = new ArrayList<WorkDay>();
 	private TextField excelFileField = new TextField();
+	private static String[] headers = {"ID", "ClientName", "Assignment", "DTE", "TravelTime", 
+	                                   "HouseTime", "CommunityTime", "Office/Docum", "ConsultTime"};
 	
 	@Override
 	public void start(Stage primaryStage) {
@@ -270,101 +270,137 @@ public class HoursTotaller extends Application{
 								}while(textBytes[j+offset] != ',');
 								
 								sessionDay = Integer.parseInt(dayString);
-								
+								break;
 							}
 							
-						}
-					}
-					else if(text.contains("Consult")) { //checks for consult time to be added
-						
-						//get the bytes to parse through
-						byte[] textBytes = text.getBytes();
-						
-						for(int j = 0; j < textBytes.length; j++) {
-							
-							curr = textBytes[j];
-							int offset = 1;
-							
-							if((char)curr == '=') {
-								
-								//trim whitespace
-								while((char)(curr = textBytes[j + offset]) == ' ') {
-									offset++;
-								}
-								
-								String addUp = "";
-	
-								//get the hours to add to running consult total
-								// and converts it to a float
-								do {
-									
-									addUp = addUp + (char)curr;
-									offset++;
-										
-								}while((char)(curr = textBytes[j + offset]) != ' ' && ((char)curr != 'h'));
-						
-								consultHours += Float.parseFloat(addUp);
-							}
 						}
 					//checks for the rest of the hours to be totaled	
 					}else if(text.contains("=")) {
-						
-						//gets the bytes to be parsed through
-						byte[] textBytes = text.getBytes();
-						
-						for(int j = 0; j < textBytes.length; j++) {
+						if(text.contains("Consult")) { //checks for consult time to be added
 							
-							curr = textBytes[j];
-							int offset = 1;
+							//get the bytes to parse through
+							byte[] textBytes = text.getBytes();
 							
-							if((char)curr == '=') {
+							for(int j = 0; j < textBytes.length; j++) {
 								
-								//trim whitespace
-								while((char)(curr = textBytes[j + offset]) == ' ') {
-									offset++;
-								}
+								curr = textBytes[j];
+								int offset = 1;
 								
-								//create and string together hours number
-								String addUp = "";
-								do {
+								if((char)curr == '=') {
 									
-									addUp = addUp + (char)curr;
-									offset++;
+									//trim whitespace
+									while((char)(curr = textBytes[j + offset]) == ' ') {
+										offset++;
+									}
+									
+									String addUp = "";
+		
+									//get the hours to add to running consult total
+									// and converts it to a float
+									do {
 										
-								}while((char)(curr = textBytes[j + offset]) != ' ' && ((char)curr != 'h'));
-									
-								//add the hours to the appropriate hours total
-								try {
-								
-									if(hoursCounter == 0) {
-										travelHours = Float.parseFloat(addUp);
-										hoursCounter++;
-									
-									}else if(hoursCounter == 1) {
-										houseHours = Float.parseFloat(addUp);
-										hoursCounter++;
-									
-									}else if(hoursCounter == 2) {
-										commHours = Float.parseFloat(addUp);
-										hoursCounter++;
-									
-									}else if(hoursCounter == 3) {
-										docHours = Float.parseFloat(addUp);
-										hoursCounter = 0;
+										addUp = addUp + (char)curr;
+										offset++;
+											
+									}while((char)(curr = textBytes[j + offset]) != ' ' && ((char)curr != 'h'));
+							
+									consultHours = Float.parseFloat(addUp);
+									boolean alreadyThere = false;
+									for(WorkDay session: sessions) {
 										
-										WorkDay workDay = new WorkDay(travelHours
-												, houseHours, commHours, docHours, nowMonth, sessionDay, 
-												thisYear, menteeName, employeeName);
-										sessions.add(workDay);
+										if(sessionDay == session.getDay()) {
+											
+											session.setConsult(consultHours);
+											alreadyThere = true;
+										}
 										
 									}
-								}catch(NumberFormatException e) {
 									
-									
-									
+									if(!alreadyThere) {
+										WorkDay session = new WorkDay(id++, 0, 0, 
+												0, 0, consultHours, nowMonth, 
+												sessionDay, thisYear, menteeName, 
+												employeeName);
+										sessions.add(session);
+									}
 								}
 							}
+						}else {	
+							//gets the bytes to be parsed through
+							byte[] textBytes = text.getBytes();
 							
+							for(int j = 0; j < textBytes.length; j++) {
+								
+								curr = textBytes[j];
+								int offset = 1;
+								
+								if((char)curr == '=') {
+									
+									//trim whitespace
+									while((char)(curr = textBytes[j + offset]) == ' ') {
+										offset++;
+									}
+									
+									//create and string together hours number
+									String addUp = "";
+									do {
+										
+										addUp = addUp + (char)curr;
+										offset++;
+											
+									}while((char)(curr = textBytes[j + offset]) != ' ' && ((char)curr != 'h'));
+										
+									//add the hours to the appropriate hours total
+									try {
+									
+										if(hoursCounter == 0) {
+											travelHours = Float.parseFloat(addUp);
+											hoursCounter++;
+										
+										}else if(hoursCounter == 1) {
+											houseHours = Float.parseFloat(addUp);
+											hoursCounter++;
+										
+										}else if(hoursCounter == 2) {
+											commHours = Float.parseFloat(addUp);
+											hoursCounter++;
+										
+										}else if(hoursCounter == 3) {
+											docHours = Float.parseFloat(addUp);
+											hoursCounter = 0;
+											
+											
+											boolean alreadyThere = false;
+											for(WorkDay session: sessions) {
+												
+												if(sessionDay == session.getDay()) {
+													
+													session.setTravel(travelHours);
+													session.setHouse(houseHours);
+													session.setComm(commHours);
+													session.setDoc(docHours);
+													alreadyThere = true;
+												}
+												
+											}
+											
+											if(!alreadyThere) {
+												WorkDay workDay = new WorkDay(id++, travelHours
+														, houseHours, commHours, docHours, (float)0,nowMonth, sessionDay, 
+														thisYear, menteeName, employeeName);
+												sessions.add(workDay);
+											}
+											
+											
+										}
+									}catch(NumberFormatException e) {
+										
+										
+										
+									}
+								}
+								
+							}
 						}
 					
 					}
@@ -482,17 +518,18 @@ public class HoursTotaller extends Application{
 		writeFile.setOnAction(e -> createFile(primaryStage));
 		
 		//add fyi image to background
-				InputStream image = ClassLoader.getSystemResourceAsStream("fyi.png");
-				Image fyi = new Image(image);
-				BackgroundImage myBI= new BackgroundImage(fyi,
-				        BackgroundRepeat.NO_REPEAT, BackgroundRepeat.NO_REPEAT, BackgroundPosition.CENTER,
-				          BackgroundSize.DEFAULT);
-				namePane.setBackground(new Background(myBI));
+		InputStream image = ClassLoader.getSystemResourceAsStream("fyi.png");
+		Image fyi = new Image(image);
+		BackgroundImage myBI= new BackgroundImage(fyi,
+				BackgroundRepeat.NO_REPEAT, BackgroundRepeat.NO_REPEAT, BackgroundPosition.CENTER,
+				BackgroundSize.DEFAULT);
+		namePane.setBackground(new Background(myBI));
 		
 		Scene scene = new Scene(namePane);
 		primaryStage.setTitle("Hours Extractor");
 		primaryStage.setScene(scene);
 		primaryStage.show();
+		
 		
 	}
 	
@@ -505,18 +542,27 @@ public class HoursTotaller extends Application{
 		
 		int rowNum = 0;
 		
+		Row headerRow = sheet.createRow(rowNum++);
+		int headerNum = 0;
+		for(int i = 0; i < headers.length; i++) {
+			
+			Cell headerCell = headerRow.createCell(headerNum++);
+			headerCell.setCellValue(headers[i]);
+		}
+		
 		for(WorkDay session: sessions) {
 			
 			Row row = sheet.createRow(rowNum++);
 			
 			int colNum = 0;
-			
-			Cell dateCell = row.createCell(colNum++);
-			dateCell.setCellValue(session.getDate());
+			Cell idCell = row.createCell(colNum++);
+			idCell.setCellValue(session.getID());
 			Cell menteeCell = row.createCell(colNum++);
 			menteeCell.setCellValue(session.getMentee());
 			Cell mentorCell = row.createCell(colNum++);
 			mentorCell.setCellValue(session.getMentor());
+			Cell dateCell = row.createCell(colNum++);
+			dateCell.setCellValue(session.getDate());
 			Cell travelCell = row.createCell(colNum++);
 			travelCell.setCellValue(session.getTravel());
 			Cell houseCell = row.createCell(colNum++);
@@ -525,6 +571,8 @@ public class HoursTotaller extends Application{
 			commCell.setCellValue(session.getComm());
 			Cell docCell = row.createCell(colNum++);
 			docCell.setCellValue(session.getDoc());
+			Cell consultCell = row.createCell(colNum++);
+			consultCell.setCellValue(session.getConsult());
 			
 		}
 		
