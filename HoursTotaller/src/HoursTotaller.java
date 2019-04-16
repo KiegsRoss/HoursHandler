@@ -12,6 +12,8 @@ import javafx.scene.layout.BackgroundRepeat;
 import javafx.scene.layout.BackgroundPosition;
 import javafx.scene.layout.BackgroundSize;
 import javafx.scene.image.Image;
+import javafx.scene.effect.DropShadow;
+import javafx.scene.paint.Color;
 import java.lang.Integer;
 import java.io.*;
 import java.lang.Float;
@@ -19,7 +21,6 @@ import java.util.List;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import java.util.concurrent.TimeUnit;
-import javax.security.auth.RefreshFailedException;
 import java.util.ArrayList;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
@@ -45,6 +46,14 @@ public class HoursTotaller extends Application{
 	private static String[] headers = {"ID", "ClientName", "Assignment", "DTE", "TravelTime", 
 	                                   "HouseTime", "CommunityTime", "Office/Docum", "ConsultTime"};
 	
+	/**
+	 * This method creates the first window of the program that asks the user for the 
+	 * employee name, number of files, and the month and year of the files that are being 
+	 * read in.
+	 * 
+	 * @param primaryStage This is the stage that is used to show all of the scenes 
+	 * throughout the program.
+	 */
 	@Override
 	public void start(Stage primaryStage) {
 		
@@ -76,18 +85,12 @@ public class HoursTotaller extends Application{
 		currYear.setOnAction(e -> getFiles(primaryStage));
 		
 		//add fyi image to background
-		
-			
-			InputStream image = ClassLoader.getSystemResourceAsStream("fyi.png");
-			Image fyi = new Image(image);
-			
-			BackgroundImage myBI= new BackgroundImage(fyi,
-			        BackgroundRepeat.NO_REPEAT, BackgroundRepeat.NO_REPEAT, BackgroundPosition.CENTER,
-			          BackgroundSize.DEFAULT);
-			firstPane.setBackground(new Background(myBI));
-		
-		
-		
+		InputStream image = ClassLoader.getSystemResourceAsStream("fyi.png");
+		Image fyi = new Image(image);
+		BackgroundImage myBI= new BackgroundImage(fyi,
+			BackgroundRepeat.NO_REPEAT, BackgroundRepeat.NO_REPEAT, BackgroundPosition.CENTER,
+			BackgroundSize.DEFAULT);
+		firstPane.setBackground(new Background(myBI));
 		
 		//setting and showing the firstPane
 		Scene scene = new Scene(firstPane);
@@ -97,9 +100,14 @@ public class HoursTotaller extends Application{
 		
 	}
 	
-	
-	
-	
+	/**
+	 * This method takes in the employee name, number of files to be read, the month, and 
+	 * the year from the previous scene. It then sets up the  next scene depending on how
+	 * many files the user specified.
+	 * 
+	 * @param primaryStage This is the stage that is used to show all of the scenes
+	 * throughout the program.
+	 */
 	private void getFiles(Stage primaryStage){
 		
 		
@@ -165,8 +173,8 @@ public class HoursTotaller extends Application{
 		Button addBtn = new Button("Extract Hours");
 		secondPane.add(addBtn, 1, totalFiles);
 		GridPane.setHalignment(addBtn, HPos.LEFT);
-		addBtn.setOnAction(e -> addHours(primaryStage));
-		files[totalFiles - 1].setOnAction(e -> addHours(primaryStage));
+		addBtn.setOnAction(e -> extractHours(primaryStage));
+		files[totalFiles - 1].setOnAction(e -> extractHours(primaryStage));
 		
 		//add fyi image to background
 		InputStream image = ClassLoader.getSystemResourceAsStream("fyi.png");
@@ -185,8 +193,15 @@ public class HoursTotaller extends Application{
 	}
 	
 	
-	
-	public void addHours(Stage primaryStage) {
+	/**
+	 * This method opens the files specified by the user, and then reads in all of the 
+	 * hours. It creates workday objects for session and adds them to the overall session 
+	 * list.
+	 * 
+	 * @param primaryStage This is the stage that is being used to display all of the 
+	 * scenes throughout the program.
+	 */
+	public void extractHours(Stage primaryStage) {
 		
 		//get the list of files to parse through from previous text fields
 		String[] fileList = new String[totalFiles];
@@ -221,6 +236,8 @@ public class HoursTotaller extends Application{
 					//get the text for each paragraph
 					String text = para.getText();
 					
+					
+					//checks if the paragraph contains the referral's name and extracts it
 					if(text.contains("Referral")) {
 						
 						byte[] textBytes = text.getBytes();
@@ -247,6 +264,7 @@ public class HoursTotaller extends Application{
 								break;
 							}
 						}
+					//checks if paragraph is the start of a session summary and extracts the date
 					}else if(text.contains(thisMonth) && text.contains(",")) {
 						
 						byte[] monthBytes = thisMonth.getBytes();
@@ -272,11 +290,10 @@ public class HoursTotaller extends Application{
 								sessionDay = Integer.parseInt(dayString);
 								break;
 							}
-							
 						}
-					//checks for the rest of the hours to be totaled	
+					//checks for hours to be read into a session	
 					}else if(text.contains("=")) {
-						if(text.contains("Consult")) { //checks for consult time to be added
+						if(text.contains("Consult")) { //checks for consult time to be read
 							
 							//get the bytes to parse through
 							byte[] textBytes = text.getBytes();
@@ -294,9 +311,7 @@ public class HoursTotaller extends Application{
 									}
 									
 									String addUp = "";
-		
-									//get the hours to add to running consult total
-									// and converts it to a float
+	
 									do {
 										
 										addUp = addUp + (char)curr;
@@ -308,7 +323,7 @@ public class HoursTotaller extends Application{
 									boolean alreadyThere = false;
 									for(WorkDay session: sessions) {
 										
-										if(sessionDay == session.getDay()) {
+										if(sessionDay == session.getDay() && menteeName == session.getMentee() && employeeName == session.getMentor()) {
 											
 											session.setConsult(consultHours);
 											alreadyThere = true;
@@ -325,7 +340,8 @@ public class HoursTotaller extends Application{
 									}
 								}
 							}
-						}else {	
+						}else {	//checks for non-consult hours to be read
+							
 							//gets the bytes to be parsed through
 							byte[] textBytes = text.getBytes();
 							
@@ -373,7 +389,7 @@ public class HoursTotaller extends Application{
 											boolean alreadyThere = false;
 											for(WorkDay session: sessions) {
 												
-												if(sessionDay == session.getDay()) {
+												if(sessionDay == session.getDay() && menteeName == session.getMentee() && employeeName == session.getMentor()) {
 													
 													session.setTravel(travelHours);
 													session.setHouse(houseHours);
@@ -381,7 +397,6 @@ public class HoursTotaller extends Application{
 													session.setDoc(docHours);
 													alreadyThere = true;
 												}
-												
 											}
 											
 											if(!alreadyThere) {
@@ -390,21 +405,14 @@ public class HoursTotaller extends Application{
 														thisYear, menteeName, employeeName);
 												sessions.add(workDay);
 											}
-											
-											
 										}
 									}catch(NumberFormatException e) {
-										
-										
-										
+										e.printStackTrace();	
 									}
 								}
-								
 							}
 						}
-					
 					}
-				
 				}
 				xdoc.close();
 				hours.close();
@@ -449,22 +457,32 @@ public class HoursTotaller extends Application{
 			menteeName = "";
 		}
 		
-		//set up pane for final window
+		//set up pane for window confirming hours were added
 		GridPane thirdPane = new GridPane();
 		thirdPane.setAlignment(Pos.CENTER);
 		thirdPane.setPadding(new Insets(20));
 		thirdPane.setHgap(6);
 		thirdPane.setVgap(10);
 		
+		DropShadow dropShadow = new DropShadow();
+		dropShadow.setRadius(5.0);
+		dropShadow.setOffsetX(3.0);
+		dropShadow.setOffsetY(1.0);
+		dropShadow.setSpread(0.5);
+		dropShadow.setColor(Color.WHITE);
+		
 		//set the labels and textfields for the calculated hours on the scene
 		Label confirm = new Label(employeeName+"'s session hours have been extracted.");
+		confirm.setEffect(dropShadow);
 		confirm.setMaxWidth(170);
 		confirm.setWrapText(true);
 		thirdPane.add(confirm, 0, 0);
 		
 		for(WorkDay wd : sessions) {
 			
-			System.out.println(wd.getDate() + " "+wd.getMentee()+" : Travel = "+wd.getTravel()+" House = "+wd.getHouse());
+			System.out.println(wd.getDate() + " "+wd.getMentor()+" "+wd.getMentee()+
+					" : Travel = "+wd.getTravel()+" House = "+wd.getHouse()+" Comm = "+
+					wd.getComm()+" Doc = "+wd.getDoc()+" Consult = "+wd.getConsult());
 			
 		}
 		
@@ -495,14 +513,18 @@ public class HoursTotaller extends Application{
 		primaryStage.setTitle("Hours Extractor");
 		primaryStage.setScene(scene);
 		primaryStage.show();
-		
-		
-		
-		
 	}
 	
+	/**
+	 * This method gets the name of the files that will be written, and then it leads to 
+	 * the method that actually writes the file.
+	 * 
+	 * @param primaryStage This is the stage that is being used to display all of the 
+	 * scenes throughout the program.
+	 */
 	public void getFileName(Stage primaryStage) {
 		
+		//set up pane for scene that gets the filename from user
 		GridPane namePane = new GridPane();
 		namePane.setAlignment(Pos.CENTER);
 		namePane.setPadding(new Insets(20));
@@ -516,6 +538,7 @@ public class HoursTotaller extends Application{
 		namePane.add(writeFile, 1, 1);
 		GridPane.setHalignment(writeFile, HPos.LEFT);
 		writeFile.setOnAction(e -> createFile(primaryStage));
+		excelFileField.setOnAction(e -> createFile(primaryStage));
 		
 		//add fyi image to background
 		InputStream image = ClassLoader.getSystemResourceAsStream("fyi.png");
@@ -525,6 +548,7 @@ public class HoursTotaller extends Application{
 				BackgroundSize.DEFAULT);
 		namePane.setBackground(new Background(myBI));
 		
+		//create scene and show on stage
 		Scene scene = new Scene(namePane);
 		primaryStage.setTitle("Hours Extractor");
 		primaryStage.setScene(scene);
@@ -533,6 +557,14 @@ public class HoursTotaller extends Application{
 		
 	}
 	
+	/**
+	 * This method creates a worksheet, creates a row for each session, and then fills
+	 * the rows in with the data from each session. Once it sets all of this up, it 
+	 * writes the worksheet to a file with the user-given file name.
+	 * 
+	 * @param primaryStage This is the stage that is being used to display all of the 
+	 * scenes throughout the program.
+	 */
 	public void createFile(Stage primaryStage) {
 		
 		String fileName = excelFileField.getText();
@@ -544,12 +576,15 @@ public class HoursTotaller extends Application{
 		
 		Row headerRow = sheet.createRow(rowNum++);
 		int headerNum = 0;
+		
+		//creates all of the necessary cells for each header
 		for(int i = 0; i < headers.length; i++) {
 			
 			Cell headerCell = headerRow.createCell(headerNum++);
 			headerCell.setCellValue(headers[i]);
 		}
 		
+		//create all of the necessary cells for each session row
 		for(WorkDay session: sessions) {
 			
 			Row row = sheet.createRow(rowNum++);
@@ -576,7 +611,7 @@ public class HoursTotaller extends Application{
 			
 		}
 		
-		try {
+		try {//write the workbook to the file with name given by user
             FileOutputStream outputStream = new FileOutputStream(fileName);
             workbook.write(outputStream);
             workbook.close();
@@ -591,6 +626,13 @@ public class HoursTotaller extends Application{
 	}
 	
 	
+	/**
+	 * This method takes in a string representation of a month, and it returns an integer
+	 * representation.
+	 * 
+	 * @param month This is the month that will be converted to a number representation
+	 * @return This is a number representation of the current month
+	 */
 	public int getMonthNum(String month) {
 		
 		if(month.equals("January") || month.equals("january")) {
@@ -624,7 +666,11 @@ public class HoursTotaller extends Application{
 	
 	
 	
-	
+	/**
+	 * This is the main method that launches the javafx application.
+	 * 
+	 * @param args These are the starting arguments for the program.
+	 */
 	public static void main(String[] args) {
 		
 		Application.launch(args);
