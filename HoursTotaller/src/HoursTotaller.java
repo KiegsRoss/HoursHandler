@@ -274,6 +274,7 @@ public class HoursTotaller extends Application{
 							
 							curr = textBytes[j];
 							int offset = 2;
+							int whitespaceCounter = 0;
 							
 							if(((char)curr == (char)monthBytes[thisMonth.length() - 1]) && (49 <= textBytes[j + 2] && textBytes[j + 2] <= 57) ) {
 								
@@ -285,7 +286,12 @@ public class HoursTotaller extends Application{
 								do {
 									dayString = dayString + (char)textBytes[j + offset];
 									offset++;
-								}while(textBytes[j+offset] != ',');
+									
+									if((char)textBytes[j+offset] == ' ') {
+										whitespaceCounter++;
+									}
+									
+								}while(textBytes[j+offset] != ',' && whitespaceCounter < 1);
 								
 								sessionDay = Integer.parseInt(dayString);
 								break;
