@@ -33,7 +33,6 @@ public class HoursTotaller extends Application{
 	private TextField numFiles = new TextField();
 	private TextField currYear = new TextField();
 	private TextField currMonth = new TextField();
-	private Button submitBtn = new Button("Submit");
 	private int totalFiles = 0;
 	private String employeeName = "";
 	private TextField[] files;
@@ -79,6 +78,7 @@ public class HoursTotaller extends Application{
 		currYear.setText("");
 		
 		//add button and set up handler
+		Button submitBtn = new Button("Sumbit");
 		firstPane.add(submitBtn, 1, 4);
 		GridPane.setHalignment(submitBtn, HPos.LEFT);
 		submitBtn.setOnAction(e -> getFiles(primaryStage));
@@ -191,7 +191,6 @@ public class HoursTotaller extends Application{
 		primaryStage.setScene(secondScene);
 		primaryStage.show();
 	}
-	
 	
 	/**
 	 * This method opens the files specified by the user, and then reads in all of the 
@@ -474,7 +473,7 @@ public class HoursTotaller extends Application{
 		dropShadow.setRadius(5.0);
 		dropShadow.setOffsetX(3.0);
 		dropShadow.setOffsetY(1.0);
-		dropShadow.setSpread(0.5);
+		dropShadow.setSpread(0.75);
 		dropShadow.setColor(Color.WHITE);
 		
 		//set the labels and textfields for the calculated hours on the scene
@@ -627,10 +626,47 @@ public class HoursTotaller extends Application{
             e.printStackTrace();
         }
 		
+		GridPane finishedPane = new GridPane();
+		finishedPane.setAlignment(Pos.CENTER);
+		finishedPane.setPadding(new Insets(20));
+		finishedPane.setHgap(6);
+		finishedPane.setVgap(10);
+		
+		DropShadow dropShadow = new DropShadow();
+		dropShadow.setRadius(5.0);
+		dropShadow.setOffsetX(3.0);
+		dropShadow.setOffsetY(1.0);
+		dropShadow.setSpread(0.75);
+		dropShadow.setColor(Color.WHITE);
+		
+		Label finalMessage = new Label("The new file "+ fileName + 
+				" has been successfully created.");
+		finalMessage.setEffect(dropShadow);
+		finishedPane.add(finalMessage, 0, 0);
+		
+		//add fyi image to background
+		InputStream image = ClassLoader.getSystemResourceAsStream("fyi.png");
+		Image fyi = new Image(image);
+		BackgroundImage myBI= new BackgroundImage(fyi,
+			BackgroundRepeat.NO_REPEAT, BackgroundRepeat.NO_REPEAT, BackgroundPosition.CENTER,
+			BackgroundSize.DEFAULT);
+		finishedPane.setBackground(new Background(myBI));
+				
+		//create scene and show on stage
+		Scene scene = new Scene(finishedPane);
+		primaryStage.setTitle("Hours Extractor");
+		primaryStage.setScene(scene);
+		primaryStage.show();
+		
+		try {
+			TimeUnit.SECONDS.sleep(5);
+		}catch(InterruptedException ie) {
+			
+		}
+		
 		System.exit(0);
 		
 	}
-	
 	
 	/**
 	 * This method takes in a string representation of a month, and it returns an integer
@@ -669,8 +705,6 @@ public class HoursTotaller extends Application{
 			return 0;
 		}
 	}
-	
-	
 	
 	/**
 	 * This is the main method that launches the javafx application.
