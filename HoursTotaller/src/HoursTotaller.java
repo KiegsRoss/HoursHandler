@@ -33,14 +33,14 @@ public class HoursTotaller extends Application{
 	
 	private TextField name = new TextField();
 	private TextField numFiles = new TextField();
-	private TextField currYear = new TextField();
-	private TextField currMonth = new TextField();
+	private TextField yearField = new TextField();
+	private TextField monthField = new TextField();
 	private int totalFiles = 0;
 	private String employeeName = "";
 	private TextField[] files;
 	private int thisYear;
-	private String thisMonth = "";
-	private int nowMonth = 0;
+	private String currMonth = "";
+	private int monthInt = 0;
 	private int id = 1;
 	private List<WorkDay> sessions = new ArrayList<WorkDay>();
 	private TextField excelFileField = new TextField();
@@ -73,18 +73,18 @@ public class HoursTotaller extends Application{
 		firstPane.add(numFiles , 1, 1);
 		numFiles.setText("");
 		firstPane.add(new Label("Current Month: "), 0, 2);
-		firstPane.add(currMonth, 1, 2);
-		currMonth.setText("");
+		firstPane.add(monthField, 1, 2);
+		monthField.setText("");
 		firstPane.add(new Label("Current Year: "), 0, 3);
-		firstPane.add(currYear, 1, 3);
-		currYear.setText("");
+		firstPane.add(yearField, 1, 3);
+		yearField.setText("");
 		
 		//add button and set up handler
 		Button submitBtn = new Button("Sumbit");
 		firstPane.add(submitBtn, 1, 4);
 		GridPane.setHalignment(submitBtn, HPos.LEFT);
 		submitBtn.setOnAction(e -> getFiles(primaryStage));
-		currYear.setOnAction(e -> getFiles(primaryStage));
+		yearField.setOnAction(e -> getFiles(primaryStage));
 		
 		//add fyi image to background
 		InputStream image = ClassLoader.getSystemResourceAsStream("fyi.png");
@@ -115,7 +115,6 @@ public class HoursTotaller extends Application{
 		
 	    //get name and number of files to parse to show appropriate number of 
 		//text fields
-		int index = 0;
 		employeeName = name.getText();
 		totalFiles = Integer.parseInt(numFiles.getText());
 		files = new TextField[totalFiles];
@@ -123,15 +122,15 @@ public class HoursTotaller extends Application{
 		for(int i = 0; i < totalFiles; i++) {
 			fileBtns.add(i, new IndexBtn(new Button("Browse..."), i));
 		}
-		thisYear = Integer.parseInt(currYear.getText());
-		thisMonth = currMonth.getText();
+		thisYear = Integer.parseInt(yearField.getText());
+		currMonth = monthField.getText();
 		
 		FileChooser fileChooser = new FileChooser();
 		fileChooser.getExtensionFilters().add(new ExtensionFilter("Word Files", "*.docx"));
 		
 		try {
-			nowMonth = getMonthNum(thisMonth);
-			if(nowMonth == 0) {
+			monthInt = getMonthNum(currMonth);
+			if(monthInt == 0) {
 				throw new NumberFormatException();
 			}
 		}catch(NumberFormatException e) {
@@ -143,7 +142,7 @@ public class HoursTotaller extends Application{
 			exceptionPane.setHgap(6);
 			exceptionPane.setVgap(10);
 			
-			Label error = new Label(thisMonth + " is not an actual month.");
+			Label error = new Label(currMonth + " is not an actual month.");
 			exceptionPane.add(error, 0, 0);
 			GridPane.setHalignment(error, HPos.CENTER);
 			
@@ -287,9 +286,9 @@ public class HoursTotaller extends Application{
 							}
 						}
 					//checks if paragraph is the start of a session summary and extracts the date
-					}else if(text.contains(thisMonth) && text.contains(",")) {
+					}else if(text.contains(currMonth) && text.contains(",")) {
 						
-						byte[] monthBytes = thisMonth.getBytes();
+						byte[] monthBytes = currMonth.getBytes();
 						byte[] textBytes = text.getBytes();
 						
 						for(int j = 0; j < textBytes.length; j++) {
@@ -298,7 +297,7 @@ public class HoursTotaller extends Application{
 							int offset = 2;
 							int whitespaceCounter = 0;
 							
-							if(((char)curr == (char)monthBytes[thisMonth.length() - 1]) && (49 <= textBytes[j + 2] && textBytes[j + 2] <= 57) ) {
+							if(((char)curr == (char)monthBytes[currMonth.length() - 1]) && (49 <= textBytes[j + 2] && textBytes[j + 2] <= 57) ) {
 								
 								while((char)textBytes[j+offset] == ' ') {
 									offset++;
@@ -361,7 +360,7 @@ public class HoursTotaller extends Application{
 									
 									if(!alreadyThere) {
 										WorkDay session = new WorkDay(id++, 0, 0, 
-												0, 0, consultHours, nowMonth, 
+												0, 0, consultHours, monthInt, 
 												sessionDay, thisYear, menteeName, 
 												employeeName);
 										sessions.add(session);
@@ -429,7 +428,7 @@ public class HoursTotaller extends Application{
 											
 											if(!alreadyThere) {
 												WorkDay workDay = new WorkDay(id++, travelHours
-														, houseHours, commHours, docHours, (float)0,nowMonth, sessionDay, 
+														, houseHours, commHours, docHours, (float)0,monthInt, sessionDay, 
 														thisYear, menteeName, employeeName);
 												sessions.add(workDay);
 											}
