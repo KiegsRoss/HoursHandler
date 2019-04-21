@@ -14,6 +14,8 @@ import javafx.scene.layout.BackgroundSize;
 import javafx.scene.image.Image;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.paint.Color;
+import javafx.stage.FileChooser;
+import javafx.stage.FileChooser.ExtensionFilter;
 import java.lang.Integer;
 import java.io.*;
 import java.lang.Float;
@@ -113,11 +115,19 @@ public class HoursTotaller extends Application{
 		
 	    //get name and number of files to parse to show appropriate number of 
 		//text fields
+		int index = 0;
 		employeeName = name.getText();
 		totalFiles = Integer.parseInt(numFiles.getText());
 		files = new TextField[totalFiles];
+		List<IndexBtn> fileBtns = new ArrayList<IndexBtn>();
+		for(int i = 0; i < totalFiles; i++) {
+			fileBtns.add(i, new IndexBtn(new Button("Browse..."), i));
+		}
 		thisYear = Integer.parseInt(currYear.getText());
 		thisMonth = currMonth.getText();
+		
+		FileChooser fileChooser = new FileChooser();
+		fileChooser.getExtensionFilters().add(new ExtensionFilter("Word Files", "*.docx"));
 		
 		try {
 			nowMonth = getMonthNum(thisMonth);
@@ -167,7 +177,12 @@ public class HoursTotaller extends Application{
 			files[i] = new TextField();
 			secondPane.add(new Label("File: "), 0, i);
 			secondPane.add(files[i], 1, i);
+			IndexBtn temp = fileBtns.get(i);
+			secondPane.add(temp.getButton(), 2, i);
+			temp.getButton().setOnAction(e -> setFileName(files, temp.getIndex(), fileChooser, primaryStage));
 		}
+		
+		
 		
 		//add button and set up handler
 		Button addBtn = new Button("Extract Hours");
@@ -190,6 +205,14 @@ public class HoursTotaller extends Application{
 		primaryStage.setTitle("Hours Extractor");
 		primaryStage.setScene(secondScene);
 		primaryStage.show();
+	}
+	
+	public void setFileName(TextField[] fields, int i, FileChooser fc, Stage primaryStage) {
+		
+		File file = fc.showOpenDialog(primaryStage);
+		
+		fields[i].setText(file.getPath());
+		
 	}
 	
 	/**
