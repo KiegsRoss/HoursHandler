@@ -206,6 +206,15 @@ public class HoursTotaller extends Application{
 		primaryStage.show();
 	}
 	
+	/**
+	 * This method opens the file browsing for choosing a file, and then it sets the 
+	 * corresponding text fields's text to the found file.
+	 * 
+	 * @param fields This is the list of textfields that take in filenames
+	 * @param i This is the index of the specific texfield that is being populated
+	 * @param fc This is the filechooser that browses for a file
+	 * @param primaryStage This is the main stage of the program
+	 */
 	public void setFileName(TextField[] fields, int i, FileChooser fc, Stage primaryStage) {
 		
 		File file = fc.showOpenDialog(primaryStage);
