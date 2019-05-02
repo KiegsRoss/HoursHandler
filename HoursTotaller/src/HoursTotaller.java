@@ -46,6 +46,9 @@ public class HoursTotaller extends Application{
 	private TextField excelFileField = new TextField();
 	private static String[] headers = {"ID", "ClientName", "Assignment", "DTE", "TravelTime", 
 	                                   "HouseTime", "CommunityTime", "Office/Docum", "ConsultTime"};
+	private static String[] billable = {"Total Billable Time", "Total Billable time", 
+			"Total billable Time","Total billable time","total Billable Time", 
+			"total Billable time", "total billable time", "total billable Time"};
 	
 	/**
 	 * This method creates the first window of the program that asks the user for the 
@@ -267,8 +270,16 @@ public class HoursTotaller extends Application{
 					String text = para.getText();
 					
 					
+					if(text.contains(billable[0]) || text.contains(billable[1]) || 
+						text.contains(billable[2]) || text.contains(billable[3])
+						|| text.contains(billable[4]) || text.contains(billable[5])
+						|| text.contains(billable[6]) || text.contains(billable[6])) {
+						
+						//don't do anything
+						
+					}
 					//checks if the paragraph contains the referral's name and extracts it
-					if(text.contains("Referral")) {
+					else if(text.contains("Referral")) {
 						
 						byte[] textBytes = text.getBytes();
 						
@@ -532,7 +543,7 @@ public class HoursTotaller extends Application{
 		Button createFile = new Button("Create Excel File");
 		thirdPane.add(createFile, 1, 1);
 		GridPane.setHalignment(createFile, HPos.CENTER);
-		createFile.setOnAction(e -> getFileName(primaryStage));
+		createFile.setOnAction(e -> createFile(primaryStage));
 		
 		//add fyi image to background
 		InputStream image = ClassLoader.getSystemResourceAsStream("fyi.png");
@@ -603,7 +614,9 @@ public class HoursTotaller extends Application{
 	 */
 	public void createFile(Stage primaryStage) {
 		
-		String fileName = excelFileField.getText();
+		//String fileName = excelFileField.getText();
+		FileChooser fc = new FileChooser();
+		fc.getExtensionFilters().add(new ExtensionFilter("Excel Files", "*.xlsx"));
 		
 		XSSFWorkbook workbook = new XSSFWorkbook();
 		XSSFSheet sheet = workbook.createSheet();
@@ -647,8 +660,10 @@ public class HoursTotaller extends Application{
 			
 		}
 		
+		File file = fc.showSaveDialog(primaryStage);
+		
 		try {//write the workbook to the file with name given by user
-            FileOutputStream outputStream = new FileOutputStream(fileName);
+            FileOutputStream outputStream = new FileOutputStream(file);
             workbook.write(outputStream);
             workbook.close();
         } catch (FileNotFoundException e) {
@@ -670,7 +685,7 @@ public class HoursTotaller extends Application{
 		dropShadow.setSpread(0.75);
 		dropShadow.setColor(Color.WHITE);
 		
-		Label finalMessage = new Label("The new file "+ fileName + 
+		Label finalMessage = new Label("The new file "+ file.getName() + 
 				" has been successfully created.");
 		finalMessage.setEffect(dropShadow);
 		finishedPane.add(finalMessage, 0, 0);
